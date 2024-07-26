@@ -3,6 +3,7 @@ from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from app import login
+from hashlib import md5
 
 
 class User(UserMixin, db.Model):
@@ -12,6 +13,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     posts = db.relationship('Post', backref='author', lazy='dynamic')  # one to many to Post
+    about_me = db.Column(db.String(140))
+    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
         """
@@ -34,6 +37,17 @@ class User(UserMixin, db.Model):
         :return: boolean
         """
         return check_password_hash(self.password_hash, password)
+
+    def avatar(self, size):
+        """
+        Avatar generation function.
+        Default size = 80x80.
+        :param size: size of the avatar (s=128 == 128x128)
+        :return: link: str (maybe custom)
+        """
+        digest = md5(self.email.lower().encode('utf-8')).hexdigest()
+        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+            digest, size)
 
 
 class Post(db.Model):
