@@ -41,3 +41,4 @@ venv
 app.db
 bloknot.log*
 .idea
+.log

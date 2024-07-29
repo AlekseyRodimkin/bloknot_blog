@@ -5,6 +5,15 @@ from flask_login import UserMixin
 from app import login
 from hashlib import md5
 
+# The structure in the form of a visual model in "../migrations/db_struct"
+# The image corresponds to the migration version by name
+
+# table of subscriber associations
+followers = db.Table('followers',
+                     db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
+                     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
+                     )
+
 
 class User(UserMixin, db.Model):
     """User model"""
@@ -15,6 +24,12 @@ class User(UserMixin, db.Model):
     posts = db.relationship('Post', backref='author', lazy='dynamic')  # one to many to Post
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+
+    followed = db.relationship(
+        'User', secondary=followers,
+        primaryjoin=(followers.c.follower_id == id),
+        secondaryjoin=(followers.c.followed_id == id),
+        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
 
     def __repr__(self):
         """
@@ -48,6 +63,37 @@ class User(UserMixin, db.Model):
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)
+
+    def follow(self, user):
+        """Subscription function"""
+        if not self.is_following(user):
+            self.followed.append(user)
+
+    def unfollow(self, user):
+        """Unsubscribe function"""
+        if self.is_following(user):
+            self.followed.remove(user)
+
+    def is_following(self, user):
+        """Subscription verification function"""
+        return self.followed.filter(
+            followers.c.followed_id == user.id).count() > 0
+
+    def followed_posts(self):
+        """
+        The function of receiving posts from people of interest.
+
+        .join() - a list of all the messages that a user is following
+        .filter() - a subset of this list, messages that are followed by only one user
+        .order_by() - sorting by time
+        own - own posts
+        :returns: combining posts subscriptions and personal, sorting by time
+        """
+        followed = Post.query.join(
+            followers, (followers.c.followed_id == Post.user_id)).filter(
+            followers.c.follower_id == self.id)
+        own = Post.query.filter_by(user_id=self.id)
+        return followed.union(own).order_by(Post.timestamp.desc())
 
 
 class Post(db.Model):
