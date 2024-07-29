@@ -42,3 +42,4 @@ app.db
 bloknot.log*
 .idea
 .log
+logs

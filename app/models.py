@@ -1,35 +1,48 @@
-from datetime import datetime
-from app import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import UserMixin
-from app import login
+from datetime import datetime, timezone
 from hashlib import md5
+from typing import Optional
+import sqlalchemy as sa
+import sqlalchemy.orm as so
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from app import db, login
 
 # The structure in the form of a visual model in "../migrations/db_struct"
 # The image corresponds to the migration version by name
 
 # table of subscriber associations
-followers = db.Table('followers',
-                     db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
-                     db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
-                     )
+followers = sa.Table(
+    'followers',
+    db.metadata,
+    sa.Column('follower_id', sa.Integer, sa.ForeignKey('user.id'),
+              primary_key=True),
+    sa.Column('followed_id', sa.Integer, sa.ForeignKey('user.id'),
+              primary_key=True)
+)
 
 
 class User(UserMixin, db.Model):
     """User model"""
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), index=True, unique=True)
-    email = db.Column(db.String(120), index=True, unique=True)
-    password_hash = db.Column(db.String(128))
-    posts = db.relationship('Post', backref='author', lazy='dynamic')  # one to many to Post
-    about_me = db.Column(db.String(140))
-    last_seen = db.Column(db.DateTime, default=datetime.utcnow)
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True,
+                                                unique=True)
+    email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
+                                             unique=True)
+    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+    about_me: so.Mapped[Optional[str]] = so.mapped_column(sa.String(140))
+    last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
+        default=lambda: datetime.now(timezone.utc))
 
-    followed = db.relationship(
-        'User', secondary=followers,
-        primaryjoin=(followers.c.follower_id == id),
+    posts: so.WriteOnlyMapped['Post'] = so.relationship(
+        back_populates='author')
+    following: so.WriteOnlyMapped['User'] = so.relationship(
+        secondary=followers, primaryjoin=(followers.c.follower_id == id),
         secondaryjoin=(followers.c.followed_id == id),
-        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
+        back_populates='followers')
+    followers: so.WriteOnlyMapped['User'] = so.relationship(
+        secondary=followers, primaryjoin=(followers.c.followed_id == id),
+        secondaryjoin=(followers.c.follower_id == id),
+        back_populates='following')
 
     def __repr__(self):
         """
@@ -61,54 +74,49 @@ class User(UserMixin, db.Model):
         :return: link: str (maybe custom)
         """
         digest = md5(self.email.lower().encode('utf-8')).hexdigest()
-        return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
-            digest, size)
+        return f'https://www.gravatar.com/avatar/{digest}?d=identicon&s={size}'
 
     def follow(self, user):
         """Subscription function"""
         if not self.is_following(user):
-            self.followed.append(user)
+            self.following.add(user)
 
     def unfollow(self, user):
         """Unsubscribe function"""
         if self.is_following(user):
-            self.followed.remove(user)
+            self.following.remove(user)
 
     def is_following(self, user):
         """Subscription verification function"""
-        return self.followed.filter(
-            followers.c.followed_id == user.id).count() > 0
+        query = self.following.select().where(User.id == user.id)
+        return db.session.scalar(query) is not None
 
-    def followed_posts(self):
-        """
-        The function of receiving posts from people of interest.
+    def followers_count(self):
+        """Subscriber counting function"""
+        query = sa.select(sa.func.count()).select_from(
+            self.followers.select().subquery())
+        return db.session.scalar(query)
 
-        .join() - a list of all the messages that a user is following
-        .filter() - a subset of this list, messages that are followed by only one user
-        .order_by() - sorting by time
-        own - own posts
-        :returns: combining posts subscriptions and personal, sorting by time
-        """
-        followed = Post.query.join(
-            followers, (followers.c.followed_id == Post.user_id)).filter(
-            followers.c.follower_id == self.id)
-        own = Post.query.filter_by(user_id=self.id)
-        return followed.union(own).order_by(Post.timestamp.desc())
+    def following_count(self):
+        """Subscription counting function"""
+        query = sa.select(sa.func.count()).select_from(
+            self.following.select().subquery())
+        return db.session.scalar(query)
 
-
-class Post(db.Model):
-    """Post model"""
-    id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.String(140))
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # many to one to Users
-
-    def __repr__(self):
-        """
-        The function returns an unambiguous representation of the posts as a string
-        :return: str
-        """
-        return '<Post {}>'.format(self.body)
+    def following_posts(self):
+        Author = so.aliased(User)
+        Follower = so.aliased(User)
+        return (
+            sa.select(Post)
+            .join(Post.author.of_type(Author))
+            .join(Author.followers.of_type(Follower), isouter=True)
+            .where(sa.or_(
+                Follower.id == self.id,
+                Author.id == self.id,
+            ))
+            .group_by(Post)
+            .order_by(Post.timestamp.desc())
+        )
 
 
 @login.user_loader
@@ -118,4 +126,19 @@ def load_user(id):
     which can be called to load a user with an ID
     :param id: user ID
     """
-    return User.query.get(int(id))
+    return db.session.get(User, int(id))
+
+
+class Post(db.Model):
+    """Post model"""
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    body: so.Mapped[str] = so.mapped_column(sa.String(140))
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc))
+    user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id),
+                                               index=True)
+
+    author: so.Mapped[User] = so.relationship(back_populates='posts')
+
+    def __repr__(self):
+        return '<Post {}>'.format(self.body)
