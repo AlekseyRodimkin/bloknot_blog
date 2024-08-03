@@ -6,6 +6,9 @@ import sqlalchemy.orm as so
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login
+from time import time
+import jwt
+from app import app
 
 # The structure in the form of a visual model in "../migrations/db_struct"
 # The image corresponds to the migration version by name
@@ -26,6 +29,8 @@ class User(UserMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True,
                                                 unique=True)
+    telegram: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
+                                             unique=True, default=None)
     email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
                                              unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
@@ -104,6 +109,7 @@ class User(UserMixin, db.Model):
         return db.session.scalar(query)
 
     def following_posts(self):
+        """The function of receiving posts subscriptions"""
         Author = so.aliased(User)
         Follower = so.aliased(User)
         return (
@@ -117,6 +123,28 @@ class User(UserMixin, db.Model):
             .group_by(Post)
             .order_by(Post.timestamp.desc())
         )
+
+    def get_reset_password_token(self, expires_in=600):
+        """
+        The function of get a token to reset the password
+        :return: JWT token: str
+        """
+        return jwt.encode(
+            {'reset_password': self.id, 'exp': time() + expires_in},
+            app.config['SECRET_KEY'], algorithm='HS256')
+
+    @staticmethod
+    def verify_reset_password_token(token):
+        """
+        Token decoding method
+        :return: User if token else None
+        """
+        try:
+            id = jwt.decode(token, app.config['SECRET_KEY'],
+                            algorithms=['HS256'])['reset_password']
+        except:
+            return
+        return db.session.get(User, id)
 
 
 @login.user_loader

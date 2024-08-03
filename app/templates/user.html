@@ -9,7 +9,10 @@
                 {% if user.about_me %}<p>{{ user.about_me }}</p>{% endif %}
                 {% if user.last_seen %}<p>Last seen on: {{ user.last_seen }}</p>{% endif %}
                 <p>{{ user.followers_count() }} followers, {{ user.following_count() }} following.</p>
+                {% if user.telegram %}<p>Telegram: <a href='https://t.me/{{ user.telegram }}'>{{ user.telegram }}</a></p>{% endif %}
+
                 {% if user == current_user %}
+                {% if not user.telegram %}<p>Telegram: <a href='https://t.me/bloknot_blog_bot'>Connect</a></p>{% endif %}
                 <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
                 {% elif not current_user.is_following(user) %}
                 <p>
