@@ -27,7 +27,7 @@ def index():
         post = Post(body=form.post.data, author=current_user)
         db.session.add(post)
         db.session.commit()
-        flash('Your post is now live!')
+        flash('Опубликовано')
         return redirect(url_for('index'))
     page = request.args.get('page', 1, type=int)
     posts = db.paginate(current_user.following_posts(), page=page,
@@ -53,7 +53,7 @@ def explore():
         if posts.has_next else None
     prev_url = url_for('explore', page=posts.prev_num) \
         if posts.has_prev else None
-    return render_template('index.html', title='Explore', posts=posts.items,
+    return render_template('index.html', title='Лента', posts=posts.items,
                            next_url=next_url, prev_url=prev_url)
 
 
@@ -72,9 +72,9 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash('Congratulations, you are now a registered user!')
+        flash('Вы зарегистрированы')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('register.html', title='Регистрация', form=form)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -91,14 +91,14 @@ def login():
         user = db.session.scalar(
             sa.select(User).where(User.username == form.username.data))
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
+            flash('Некорректное имя или пароль')
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get('next')
         if not next_page or urlsplit(next_page).netloc != '':
             next_page = url_for('index')
         return redirect(next_page)
-    return render_template('login.html', title='Sign In', form=form)
+    return render_template('login.html', title='Вход', form=form)
 
 
 @app.route('/logout')
@@ -146,12 +146,12 @@ def edit_profile():
         current_user.username = form.username.data
         current_user.about_me = form.about_me.data
         db.session.commit()
-        flash('Your changes have been saved.')
+        flash('Сохранено')
         return redirect(url_for('edit_profile'))
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.about_me.data = current_user.about_me
-    return render_template('edit_profile.html', title='Edit Profile',
+    return render_template('edit_profile.html', title='О себе',
                            form=form)
 
 
@@ -171,11 +171,11 @@ def follow(username):
             flash(f'User {username} not found.')
             return redirect(url_for('index'))
         if user == current_user:
-            flash('You cannot follow yourself!')
+            flash('Это вы')
             return redirect(url_for('user', username=username))
         current_user.follow(user)
         db.session.commit()
-        flash(f'You are following {username}!')
+        flash(f'Подписались на {username}')
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
@@ -194,14 +194,14 @@ def unfollow(username):
         user = db.session.scalar(
             sa.select(User).where(User.username == username))
         if user is None:
-            flash(f'User {username} not found.')
+            flash(f'Пользователь {username} не найден.')
             return redirect(url_for('index'))
         if user == current_user:
-            flash('You cannot unfollow yourself!')
+            flash('Это вы')
             return redirect(url_for('user', username=username))
         current_user.unfollow(user)
         db.session.commit()
-        flash(f'You are not following {username}.')
+        flash(f'Отписались от {username}.')
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))

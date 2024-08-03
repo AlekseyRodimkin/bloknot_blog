@@ -18,13 +18,5 @@ class Config(object):
                               'sqlite:///' + os.path.join(basedir, 'app.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Config email notifications
-    MAIL_SERVER = os.getenv('MAIL_SERVER')
-    MAIL_PORT = int(os.getenv('MAIL_PORT') or 25)
-    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS') is not None
-    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
-    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
-    ADMINS = os.getenv('ADMINS')
-
     # The number of displayed items in the /index, /explore
     POSTS_PER_PAGE = 25

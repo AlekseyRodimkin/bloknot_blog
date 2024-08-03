@@ -2,11 +2,11 @@
 {% import "bootstrap_wtf.html" as wtf %}
 
 {% block content %}
-    <h1>Sign In</h1>
+    <h1>Вход</h1>
     {{ wtf.quick_form(form) }}
-    <p>New User? <a href="{{ url_for('register') }}">Click to Register!</a></p>
+    <p>Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
     <p>
-        Forgot Your Password?
-        <a href="#">Click to Reset It</a>
+        Забыли пароль?
+        <a href="https://t.me/bloknot_blog_bot">Сбросить</a>
     </p>
 {% endblock %}

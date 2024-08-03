@@ -10,21 +10,21 @@ from app.models import User
 
 class LoginForm(FlaskForm):
     """Authorization Form class"""
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember_me = BooleanField('Remember Me')
-    submit = SubmitField('Sign In')
+    username = StringField('Имя', validators=[DataRequired()])
+    password = PasswordField('Пароль', validators=[DataRequired()])
+    remember_me = BooleanField('Запомнить меня')
+    submit = SubmitField('Войти')
 
 
 class RegistrationForm(FlaskForm):
     """Registration form class"""
-    username = StringField('Username: ', validators=[DataRequired()])
+    username = StringField('Имя: ', validators=[DataRequired()])
     telegram = StringField('Telegram: @...', validators=[])
     email = StringField('Email:', validators=[Email()])
-    password = PasswordField('Password:', validators=[DataRequired()])
+    password = PasswordField('Пароль:', validators=[DataRequired()])
     password2 = PasswordField(
-        'Repeat Password:', validators=[DataRequired(), EqualTo('password')])
-    submit = SubmitField('Register')
+        'Повторите пароль:', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Зарегистрироваться')
 
     def validate_username(self, username):
         """
@@ -35,7 +35,7 @@ class RegistrationForm(FlaskForm):
         user = db.session.scalar(sa.select(User).where(
             User.username == username.data))
         if user is not None:
-            raise ValidationError('Please use a different username.')
+            raise ValidationError('Имя занято')
 
     def validate_email(self, email):
         """
@@ -46,14 +46,25 @@ class RegistrationForm(FlaskForm):
         user = db.session.scalar(sa.select(User).where(
             User.email == email.data))
         if user is not None:
-            raise ValidationError('Please use a different email address.')
+            raise ValidationError('Почта уже зарегистрирована')
+
+    def validate_telegram(self, telegram):
+        """
+        The function of checking an existing telegram
+        :param telegram: telegram address
+        :return: not or error
+        """
+        user = db.session.scalar(sa.select(User).where(
+            User.telegram == telegram.data))
+        if user is not None:
+            raise ValidationError('Аккаунт уже зарегистрирован')
 
 
 class EditProfileForm(FlaskForm):
     """The form of changing information"""
-    username = StringField('Username', validators=[DataRequired()])
-    about_me = TextAreaField('About me', validators=[Length(min=0, max=140)])
-    submit = SubmitField('Submit')
+    username = StringField('Имя', validators=[DataRequired()])
+    about_me = TextAreaField('Обо мне', validators=[Length(min=0, max=140)])
+    submit = SubmitField('Сохранить')
 
     def __init__(self, original_username, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,15 +75,15 @@ class EditProfileForm(FlaskForm):
             user = db.session.scalar(sa.select(User).where(
                 User.username == username.data))
             if user is not None:
-                raise ValidationError('Please use a different username.')
+                raise ValidationError('Пожалуйста, используйте другое имя пользователя.')
 
 
 class EmptyForm(FlaskForm):
-    submit = SubmitField('Submit')
+    submit = SubmitField('Подтвердить')
 
 
 class PostForm(FlaskForm):
     """Post form class"""
-    post = TextAreaField('Say something', validators=[
+    post = TextAreaField('Расскажите что-то', validators=[
         DataRequired(), Length(min=1, max=140)])
-    submit = SubmitField('Submit')
+    submit = SubmitField('Опубликовать')

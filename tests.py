@@ -9,7 +9,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class UserModelCase(unittest.TestCase):
     def setUp(self):
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'test.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'test_db', 'test.db')
         self.app_context = app.app_context()
         self.app_context.push()
         db.create_all()
@@ -32,8 +32,8 @@ class UserModelCase(unittest.TestCase):
                                          '?d=identicon&s=128'))
 
     def test_follow(self):
-        u1 = User(username='Olegg', email='omyleg@yandex.ru')
-        u2 = User(username='Ivan', email='ivan@ndsons.com')
+        u1 = User(username='Olegg', email='omyleg@yandex.ru', telegram='Olegg')
+        u2 = User(username='Ivan', email='ivan@ndsons.com', telegram='Ivan')
         db.session.add(u1)
         db.session.add(u2)
         db.session.commit()
@@ -60,10 +60,10 @@ class UserModelCase(unittest.TestCase):
 
         def test_follow_posts(self):
             # create four users
-            u1 = User(username='Oleg', email='tworedlegs@gmail.com')
-            u2 = User(username='Anna', email='ann@yandex.ru')
-            u3 = User(username='Yana', email='myemailn@gmailna.com')
-            u4 = User(username='Boris', email='boriscurva@gmail.com')
+            u1 = User(username='Oleg', email='tworedlegs@gmail.com', telegram='u1')
+            u2 = User(username='Anna', email='ann@yandex.ru', telegram='u2')
+            u3 = User(username='Yana', email='myemailn@gmailna.com', telegram='u3')
+            u4 = User(username='Boris', email='boriscurva@gmail.com', telegram='u4')
             db.session.add_all([u1, u2, u3, u4])
 
             # create four posts
