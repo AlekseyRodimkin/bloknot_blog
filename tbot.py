@@ -102,7 +102,7 @@ def start_script(message: Message) -> None:
             sa.select(User).where(User.telegram == message.from_user.username))
         if user:
             bot.send_message(message.from_user.id,
-                             f'Введите ваш пароль:',
+                             f'Введите ваш новый пароль:',
                              reply_markup=ReplyKeyboardRemove())
             bot.set_state(message.from_user.id, UserInfoState.wait_password, message.chat.id)
             logger.debug("State -> wait_password")

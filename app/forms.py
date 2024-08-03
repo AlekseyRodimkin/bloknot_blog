@@ -18,12 +18,12 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     """Registration form class"""
-    username = StringField('Username', validators=[DataRequired()])
-    telegram = StringField('Telegram', validators=[])
-    email = StringField('Email', validators=[Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
+    username = StringField('Username: ', validators=[DataRequired()])
+    telegram = StringField('Telegram: @...', validators=[])
+    email = StringField('Email:', validators=[Email()])
+    password = PasswordField('Password:', validators=[DataRequired()])
     password2 = PasswordField(
-        'Repeat Password', validators=[DataRequired(), EqualTo('password')])
+        'Repeat Password:', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
 
     def validate_username(self, username):
