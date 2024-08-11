@@ -5,7 +5,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 import sqlalchemy as sa
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, \
-    EmptyForm, PostForm
+    EmptyForm, PostForm, ChangePost
 from app.models import User, Post
 
 
@@ -212,6 +212,7 @@ def unfollow(username):
 def delete_post(username, post_id):
     """
     Post deletion function
+    :param username: str
     :param post_id: str
     :return: redirect
     """
@@ -223,3 +224,23 @@ def delete_post(username, post_id):
         db.session.commit()
         flash('Пост удален')
         return redirect(url_for('user', username=username))
+
+
+@app.route('/change_post/<username>/<post_id>', methods=['POST'])
+@login_required
+def change_post(username, post_id):
+    """
+    Post changing function
+    :param username: str
+    :param post_id: str
+    :return: redirect
+    """
+    form = ChangePost()
+    if form.validate_on_submit():
+        post = db.session.scalar(
+            sa.select(Post).where(Post.id == post_id))
+        post.body = form.post.data
+        db.session.commit()
+        flash('Пост изменен')
+        return redirect(url_for('user', username=username))
+    return render_template('change_post.html', title='Изменить пост', form=form)

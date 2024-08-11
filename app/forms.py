@@ -87,3 +87,10 @@ class PostForm(FlaskForm):
     post = TextAreaField('Расскажите что-то', validators=[
         DataRequired(), Length(min=1, max=140)])
     submit = SubmitField('Опубликовать')
+
+
+class ChangePost(FlaskForm):
+    """Post changing class"""
+    post = TextAreaField('Измените пост', validators=[
+        DataRequired(), Length(min=1, max=140)])
+    submit = SubmitField('Изменить')

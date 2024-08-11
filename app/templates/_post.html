@@ -20,6 +20,10 @@
                 {{ form.hidden_tag() }}
                 {{ form.submit(value='Удалить') }}
             </form>
+            <form action="{{ url_for('change_post', username=user.username, post_id=post.id) }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value='Изменить') }}
+            </form>
         </td>
         {% endif %}
     </tr>
