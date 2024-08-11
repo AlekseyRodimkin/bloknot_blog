@@ -36,7 +36,7 @@ def index():
         if posts.has_next else None
     prev_url = url_for('index', page=posts.prev_num) \
         if posts.has_prev else None
-    return render_template('index.html', title='Home', form=form,
+    return render_template('index.html', title='Подписки', form=form,
                            posts=posts.items, next_url=next_url,
                            prev_url=prev_url)
 
@@ -205,3 +205,21 @@ def unfollow(username):
         return redirect(url_for('user', username=username))
     else:
         return redirect(url_for('index'))
+
+
+@app.route('/delete_post/<username>/<post_id>', methods=['POST'])
+@login_required
+def delete_post(username, post_id):
+    """
+    Post deletion function
+    :param post_id: str
+    :return: redirect
+    """
+    form = EmptyForm()
+    if form.validate_on_submit():
+        post = db.session.scalar(
+            sa.select(Post).where(Post.id == post_id))
+        db.session.delete(post)
+        db.session.commit()
+        flash('Пост удален')
+        return redirect(url_for('user', username=username))
