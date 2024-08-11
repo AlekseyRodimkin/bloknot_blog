@@ -17,6 +17,6 @@ Gravatar - генерация аватара (https://docs.gravatar.com/)
 
 ![Вход](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/login.png)
 ![Профиль](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/profile.png)
-![Лента](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/Posts.png)
-![Пользователь](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/User.png)
+![Главная](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/main.png)
+![Лента](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/explore.png)
 ![Бот](https://github.com/AlekseyRodimkin/bloknot_blog/raw/main/README/bot.png)
