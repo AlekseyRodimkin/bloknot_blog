@@ -9,26 +9,13 @@
         <td>
             <h1>{{ user.username }}</h1>
             {% if user.about_me %}
-            <p>
-                <button type="button" class="btn btn-outline-info btn-sm" disabled>{{ user.about_me }}
-                </button>
-            </p>
+            <p>{{ user.about_me }}</p>
             {% endif %}
             {% if user.last_seen %}
-            <p>
-                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Последний вход: {{
-                    moment(user.last_seen).format('LLL') }}
-                </button>
-            </p>
+            <p>Последний вход: {{ moment(user.last_seen).format('LLL') }}</p>
             {% endif %}
-            <p>
-                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>{{ user.followers_count() }}
-                    подписчики, {{ user.following_count() }} подписки.
-                </button>
-            </p>
-            <p>
-                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>{{ user.email }}</button>
-            </p>
+            <p>{{ user.followers_count() }} подписчики, {{ user.following_count() }} подписки.</p>
+            <p>{{ user.email }}</p>
 
             {% if user.telegram %}
             <div class="btn-group" role="group" aria-label="Basic outlined example">
