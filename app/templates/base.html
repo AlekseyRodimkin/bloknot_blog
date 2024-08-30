@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru" data-bs-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,11 +13,17 @@
             rel="stylesheet"
             integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
             crossorigin="anonymous">
+
 </head>
 <body>
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container">
-        <a class="navbar-brand" href="{{ url_for('index') }}">Bloknot</a>
+        <a class="navbar-brand" href="{{ url_for('main.index') }}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                 class="bi bi-chat-left-text-fill" viewBox="0 0 16 16">
+                <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+            </svg>
+            Bloknot</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -25,25 +31,33 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="{{ url_for('index') }}">Главная</a>
+                    <a class="nav-link" aria-current="page" href="{{ url_for('main.index') }}">Главная</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="{{ url_for('explore') }}">Лента</a>
+                    <a class="nav-link" aria-current="page" href="{{ url_for('main.explore') }}">Лента</a>
                 </li>
             </ul>
             <ul class="navbar-nav mb-2 mb-lg-0">
                 {% if current_user.is_anonymous %}
                 <li class="nav-item">
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary">Войти</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">Войти</a>
                 </li>
                 {% else %}
-                <li class="nav-item">
-                    <a class="btn btn-primary" aria-current="page"
-                       href="{{ url_for('user', username=current_user.username) }}">Профиль</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="{{ url_for('logout') }}">Выйти</a>
-                </li>
+                <div class="dropdown text-end">
+                    <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="{{ current_user.avatar(128) }}" alt="mdo" width="36" height="36"
+                             class="rounded-circle">
+                    </a>
+                    <ul class="dropdown-menu text-small">
+                        <li><a class="dropdown-item" href="{{ url_for('main.user', username=current_user.username) }}">Профиль</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Выйти</a></li>
+                    </ul>
+                </div>
                 {% endif %}
             </ul>
         </div>

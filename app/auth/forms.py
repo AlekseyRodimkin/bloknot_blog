@@ -18,12 +18,12 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     """Registration form class"""
-    username = StringField('Имя: ', validators=[DataRequired()])
+    username = StringField('Имя:', validators=[DataRequired()])
     telegram = StringField('Telegram: @...', validators=[])
-    email = StringField('Email:', validators=[Email()])
-    password = PasswordField('Пароль:', validators=[DataRequired()])
+    email = StringField('Email: ', validators=[Email()])
+    password = PasswordField('Пароль: ', validators=[DataRequired()])
     password2 = PasswordField(
-        'Повторите пароль:', validators=[DataRequired(), EqualTo('password')])
+        'Повторите пароль: ', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Зарегистрироваться')
 
     def validate_username(self, username):
@@ -54,43 +54,8 @@ class RegistrationForm(FlaskForm):
         :param telegram: telegram address
         :return: not or error
         """
-        user = db.session.scalar(sa.select(User).where(
-            User.telegram == telegram.data))
-        if user is not None:
-            raise ValidationError('Аккаунт уже зарегистрирован')
-
-
-class EditProfileForm(FlaskForm):
-    """The form of changing information"""
-    username = StringField('Имя', validators=[DataRequired()])
-    about_me = TextAreaField('Обо мне', validators=[Length(min=0, max=140)])
-    submit = SubmitField('Сохранить')
-
-    def __init__(self, original_username, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.original_username = original_username
-
-    def validate_username(self, username):
-        if username.data != self.original_username:
+        if telegram.data:
             user = db.session.scalar(sa.select(User).where(
-                User.username == username.data))
+                User.telegram == telegram.data))
             if user is not None:
-                raise ValidationError('Пожалуйста, используйте другое имя пользователя.')
-
-
-class EmptyForm(FlaskForm):
-    submit = SubmitField('Подтвердить')
-
-
-class PostForm(FlaskForm):
-    """Post form class"""
-    post = TextAreaField('Расскажите что-то', validators=[
-        DataRequired(), Length(min=1, max=140)])
-    submit = SubmitField('Опубликовать')
-
-
-class ChangePost(FlaskForm):
-    """Post changing class"""
-    post = TextAreaField('Измените пост', validators=[
-        DataRequired(), Length(min=1, max=140)])
-    submit = SubmitField('Изменить')
+                raise ValidationError('Аккаунт с этим Telegram уже зарегистрирован')

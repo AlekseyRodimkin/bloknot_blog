@@ -1,30 +1,48 @@
 <table class="table table-hover">
-    <tr>
-        <td width="70px">
-            <a href="{{ url_for('user', username=post.author.username) }}">
-                <img src="{{ post.author.avatar(70) }}" class="rounded-circle"/>
-            </a>
-        </td>
-        <td>
-            <strong>
-                <a href="{{ url_for('user', username=post.author.username) }}">
-                    {{ post.author.username }}
-                </a>
-            </strong>{{ moment(post.timestamp).fromNow() }}
-            <br>
-            {{ post.body }}
-        </td>
-        {% if user == current_user %}
-        <td>
-            <form action="{{ url_for('delete_post', username=user.username, post_id=post.id) }}" method="post">
-                {{ form.hidden_tag() }}
-                {{ form.submit(value='Удалить') }}
-            </form>
-            <form action="{{ url_for('change_post', username=user.username, post_id=post.id) }}" method="post">
-                {{ form.hidden_tag() }}
-                {{ form.submit(value='Изменить') }}
-            </form>
-        </td>
-        {% endif %}
-    </tr>
+    <!-- Posts -->
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <div class="card" style="background: #f5f5f5;">
+                <div class="card-body">
+                    <div class="d-flex">
+                        <div class="p-2">
+                            <a href="{{ url_for('main.user', username=post.author.username) }}">
+                                <img src="{{ post.author.avatar(70) }}" class="rounded-circle" width="70" height="70"
+                                     alt="Avatar">
+                            </a>
+                        </div>
+                        <div class="ml-3">
+                            <h5 class="card-title">
+                                <a href="{{ url_for('main.user', username=post.author.username) }}" class="text-dark">
+                                    {{ post.author.username }}
+                                </a>
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ moment(post.timestamp).fromNow() }}</h6>
+                            <p class="card-text">{{ post.body }}</p>
+                            {% if user == current_user %}
+                            <div class="btn-group" role="group" aria-label="Actions">
+                                <form action="{{ url_for('main.change_post', username=user.username, post_id=post.id) }}"
+                                      method="post" style="display:inline;">
+                                    <div class="form-group mb-0">
+                                        {{ form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">Изменить</button>
+                                    </div>
+                                </form>
+                                <form action="{{ url_for('main.delete_post', username=user.username, post_id=post.id) }}"
+                                      method="post" style="display:inline;">
+                                    <div class="form-group mb-0">
+                                        {{ form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">Удалить</button>
+                                    </div>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
 </table>
+

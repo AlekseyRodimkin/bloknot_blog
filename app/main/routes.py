@@ -1,15 +1,14 @@
 from datetime import datetime
-from urllib.parse import urlsplit
-from flask import render_template, flash, redirect, url_for, request
-from flask_login import login_user, logout_user, current_user, login_required
+from flask import render_template, flash, redirect, url_for, request, current_app
+from flask_login import current_user, login_required
 import sqlalchemy as sa
-from app import app, db
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, \
-    EmptyForm, PostForm, ChangePost
+from app import db
 from app.models import User, Post
+from app.main import bp
+from app.main.forms import PostForm, EmptyForm, EditProfileForm, ChangePost
 
 
-@app.before_request
+@bp.before_request
 def before_request():
     """The function of updating the last visit"""
     if current_user.is_authenticated:
@@ -17,8 +16,8 @@ def before_request():
         db.session.commit()
 
 
-@app.route('/', methods=['GET', 'POST'])
-@app.route('/index', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/index', methods=['GET', 'POST'])
 @login_required
 def index():
     """The function of the main page"""
@@ -28,27 +27,27 @@ def index():
         db.session.add(post)
         db.session.commit()
         flash('Опубликовано')
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
     page = request.args.get('page', 1, type=int)
     posts = db.paginate(current_user.following_posts(), page=page,
-                        per_page=app.config['POSTS_PER_PAGE'], error_out=False)
-    next_url = url_for('index', page=posts.next_num) \
+                        per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('main.index', page=posts.next_num) \
         if posts.has_next else None
-    prev_url = url_for('index', page=posts.prev_num) \
+    prev_url = url_for('main.index', page=posts.prev_num) \
         if posts.has_prev else None
     return render_template('index.html', title='Подписки', form=form,
                            posts=posts.items, next_url=next_url,
                            prev_url=prev_url)
 
 
-@app.route('/explore')
+@bp.route('/explore')
 @login_required
 def explore():
     """The function of the page of all posts"""
     page = request.args.get('page', 1, type=int)
     query = sa.select(Post).order_by(Post.timestamp.desc())
     posts = db.paginate(query, page=page,
-                        per_page=app.config['POSTS_PER_PAGE'], error_out=False)
+                        per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
     next_url = url_for('explore', page=posts.next_num) \
         if posts.has_next else None
     prev_url = url_for('explore', page=posts.prev_num) \
@@ -57,61 +56,7 @@ def explore():
                            next_url=next_url, prev_url=prev_url)
 
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    """
-    Account register function
-    :return: register or login pages
-    """
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data, telegram=form.telegram.data)
-        user.set_password(form.password.data)
-        db.session.add(user)
-        db.session.commit()
-        flash('Вы зарегистрированы')
-        return redirect(url_for('login'))
-    return render_template('register.html', title='Регистрация', form=form)
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """
-    Account login function
-    :return: index or login pages
-    """
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data))
-        if user is None or not user.check_password(form.password.data):
-            flash('Некорректное имя или пароль')
-            return redirect(url_for('login'))
-        login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get('next')
-        if not next_page or urlsplit(next_page).netloc != '':
-            next_page = url_for('index')
-        return redirect(next_page)
-    return render_template('login.html', title='Вход', form=form)
-
-
-@app.route('/logout')
-def logout():
-    """
-    Account logout function
-    :return: index page
-    """
-    logout_user()
-    return redirect(url_for('index'))
-
-
-@app.route('/user/<username>')
+@bp.route('/user/<username>')
 @login_required
 def user(username):
     """
@@ -123,7 +68,7 @@ def user(username):
     page = request.args.get('page', 1, type=int)
     query = user.posts.select().order_by(Post.timestamp.desc())
     posts = db.paginate(query, page=page,
-                        per_page=app.config['POSTS_PER_PAGE'],
+                        per_page=current_app.config['POSTS_PER_PAGE'],
                         error_out=False)
     next_url = url_for('user', username=user.username, page=posts.next_num) \
         if posts.has_next else None
@@ -134,7 +79,7 @@ def user(username):
                            next_url=next_url, prev_url=prev_url, form=form)
 
 
-@app.route('/edit_profile', methods=['GET', 'POST'])
+@bp.route('/edit_profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
     """
@@ -147,7 +92,7 @@ def edit_profile():
         current_user.about_me = form.about_me.data
         db.session.commit()
         flash('Сохранено')
-        return redirect(url_for('edit_profile'))
+        return redirect(url_for('main.edit_profile'))
     elif request.method == 'GET':
         form.username.data = current_user.username
         form.about_me.data = current_user.about_me
@@ -155,7 +100,7 @@ def edit_profile():
                            form=form)
 
 
-@app.route('/follow/<username>', methods=['POST'])
+@bp.route('/follow/<username>', methods=['POST'])
 @login_required
 def follow(username):
     """
@@ -169,19 +114,19 @@ def follow(username):
             sa.select(User).where(User.username == username))
         if user is None:
             flash(f'User {username} not found.')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         if user == current_user:
             flash('Это вы')
-            return redirect(url_for('user', username=username))
+            return redirect(url_for('main.user', username=username))
         current_user.follow(user)
         db.session.commit()
         flash(f'Подписались на {username}')
-        return redirect(url_for('user', username=username))
+        return redirect(url_for('main.user', username=username))
     else:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
 
-@app.route('/unfollow/<username>', methods=['POST'])
+@bp.route('/unfollow/<username>', methods=['POST'])
 @login_required
 def unfollow(username):
     """
@@ -195,19 +140,19 @@ def unfollow(username):
             sa.select(User).where(User.username == username))
         if user is None:
             flash(f'Пользователь {username} не найден.')
-            return redirect(url_for('index'))
+            return redirect(url_for('main.index'))
         if user == current_user:
             flash('Это вы')
-            return redirect(url_for('user', username=username))
+            return redirect(url_for('main.user', username=username))
         current_user.unfollow(user)
         db.session.commit()
         flash(f'Отписались от {username}.')
-        return redirect(url_for('user', username=username))
+        return redirect(url_for('main.user', username=username))
     else:
-        return redirect(url_for('index'))
+        return redirect(url_for('main.index'))
 
 
-@app.route('/delete_post/<username>/<post_id>', methods=['POST'])
+@bp.route('/delete_post/<username>/<post_id>', methods=['POST'])
 @login_required
 def delete_post(username, post_id):
     """
@@ -223,10 +168,10 @@ def delete_post(username, post_id):
         db.session.delete(post)
         db.session.commit()
         flash('Пост удален')
-        return redirect(url_for('user', username=username))
+        return redirect(url_for('main.user', username=username))
 
 
-@app.route('/change_post/<username>/<post_id>', methods=['POST'])
+@bp.route('/change_post/<username>/<post_id>', methods=['POST'])
 @login_required
 def change_post(username, post_id):
     """
@@ -242,5 +187,5 @@ def change_post(username, post_id):
         post.body = form.post.data
         db.session.commit()
         flash('Пост изменен')
-        return redirect(url_for('user', username=username))
+        return redirect(url_for('main.user', username=username))
     return render_template('change_post.html', title='Изменить пост', form=form)

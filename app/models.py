@@ -8,7 +8,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login
 from time import time
 import jwt
-from app import app
+from app import db
+from flask import current_app
 
 # The structure in the form of a visual model in "../migrations/db_struct"
 # The image corresponds to the migration version by name
@@ -30,7 +31,7 @@ class User(UserMixin, db.Model):
     username: so.Mapped[str] = so.mapped_column(sa.String(64), index=True,
                                                 unique=True)
     telegram: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
-                                                unique=True, default=None)
+                                                default=None, nullable=True)
     email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
                                              unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
@@ -39,15 +40,15 @@ class User(UserMixin, db.Model):
         default=lambda: datetime.now(timezone.utc))
 
     posts: so.WriteOnlyMapped['Post'] = so.relationship(
-        back_populates='author')
+        back_populates='author', passive_deletes=True)
     following: so.WriteOnlyMapped['User'] = so.relationship(
         secondary=followers, primaryjoin=(followers.c.follower_id == id),
         secondaryjoin=(followers.c.followed_id == id),
-        back_populates='followers')
+        back_populates='followers', passive_deletes=True)
     followers: so.WriteOnlyMapped['User'] = so.relationship(
         secondary=followers, primaryjoin=(followers.c.followed_id == id),
         secondaryjoin=(followers.c.follower_id == id),
-        back_populates='following')
+        back_populates='following', passive_deletes=True)
 
     def __repr__(self):
         """
@@ -131,7 +132,7 @@ class User(UserMixin, db.Model):
         """
         return jwt.encode(
             {'reset_password': self.id, 'exp': time() + expires_in},
-            app.config['SECRET_KEY'], algorithm='HS256')
+            current_app.config['SECRET_KEY'], algorithm='HS256')
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -140,7 +141,7 @@ class User(UserMixin, db.Model):
         :return: User if token else None
         """
         try:
-            id = jwt.decode(token, app.config['SECRET_KEY'],
+            id = jwt.decode(token, current_app.config['SECRET_KEY'],
                             algorithms=['HS256'])['reset_password']
         except:
             return
